@@ -1,0 +1,57 @@
+{
+  "name": "dsh-virtualbox",
+  "version": "0.1.0",
+  "description": "DSH plugin: create, boot and drive Linux VMs on the local VirtualBox host from cloud-image templates, with cloud-init seeding, SSH forwarding, snapshots and console access.",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "scripts",
+    "examples",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "AGENTS.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "virtualbox",
+    "vboxmanage",
+    "vm",
+    "cloud-init",
+    "qcow2",
+    "sandbox",
+    "test-environment"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.0.1-rc <2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "selftest": "node scripts/selftest.mjs offline",
+    "e2e": "node scripts/selftest.mjs e2e"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SupportSpark/dsh-virtualbox.git"
+  },
+  "homepage": "https://github.com/SupportSpark/dsh-virtualbox#readme",
+  "bugs": {
+    "url": "https://github.com/SupportSpark/dsh-virtualbox/issues"
+  }
+}

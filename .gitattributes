@@ -1,0 +1,5 @@
+# Keep sources LF in the repository regardless of the authoring platform.
+* text=auto eol=lf
+
+*.png binary
+*.iso binary

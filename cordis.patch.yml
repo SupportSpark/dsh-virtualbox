@@ -1,0 +1,11 @@
+# DSH bundle patch for dsh-virtualbox.
+#
+# Installing the bundle is enough to activate it:
+#   dsh plugin add link:<path-to-this-package>
+#   dsh plugin add github:SupportSpark/dsh-virtualbox
+#
+# The row below inserts the plugin into the profile composition. Configuration
+# is optional; every field has a default (see lib/index.js DEFAULTS).
+- insert:
+    - id: dsh-virtualbox
+      name: dsh-virtualbox

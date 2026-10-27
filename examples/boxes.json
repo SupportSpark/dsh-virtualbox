@@ -1,0 +1,51 @@
+// dsh-virtualbox — box template.
+//
+// This is the file you edit. Each key under "boxes" is a VM name; "defaults"
+// applies to every box unless the box overrides it. `vbox_apply` creates the
+// missing VMs and boots the stopped ones, then waits for SSH — so going from a
+// clean host to a ready-to-test environment is a single call.
+{
+  "defaults": {
+    "template": "debian-12",
+    "cpus": 2,
+    "memoryMB": 2048,
+    "diskGB": 12,
+    "user": "dev",
+    "snapshot": "clean",
+    // Commands run once by cloud-init on first boot (idempotent is better).
+    "runcmd": [
+      "echo booted > /var/tmp/dsh-provisioned"
+    ]
+  },
+  "boxes": {
+    // Minimal Debian box for running builds and shell tooling.
+    "lab-debian": {
+      "template": "debian-12",
+      "packages": ["build-essential", "curl", "jq", "python3", "python3-pip"]
+    },
+
+    // Ubuntu box: same contract, different base image.
+    "lab-ubuntu": {
+      "template": "ubuntu-24.04",
+      "memoryMB": 4096,
+      "diskGB": 16,
+      "packages": ["curl", "git", "python3-venv"]
+    },
+
+    // Tiny box for fast smoke tests; 512 MiB is enough for a busybox-ish shell.
+    "lab-alpine": {
+      "template": "alpine-3.21",
+      "cpus": 1,
+      "memoryMB": 512,
+      "diskGB": 4,
+      "user": "alpine"
+    },
+
+    // RHEL-family box for rpm/systemd-specific work.
+    "lab-rocky": {
+      "template": "rocky-9",
+      "memoryMB": 3072,
+      "diskGB": 14
+    }
+  }
+}

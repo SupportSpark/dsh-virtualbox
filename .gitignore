@@ -1,0 +1,20 @@
+# runtime artifacts — never part of the package
+node_modules/
+*.vdi
+*.vmdk
+*.qcow2
+*.raw
+*.iso
+*.log
+*.part
+.DSH_VBOX_HOME/
+vms/
+cache/
+state/
+keys/
+
+# editor / OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
