@@ -177,8 +177,9 @@ vbox_apply { "dryRun": true }           // 先看会做什么
 | 现象 | 处理 |
 |---|---|
 | `vbox_wait` 超时 | `vbox_console` 看截图和 `vms/<name>/serial.log` 尾部；常见是镜像固件不匹配（试 `firmware: "efi"`）或 cloud-init 没读到 seed |
-| VM 明显慢、guest 时钟跑飞 | 先 `vbox_status` 看 `execution engine` 行：`NEM/WHP` 表示 VT-x 被别的 hypervisor 占着。**关掉"启用或关闭 Windows 功能"里的 Hyper-V 并不够** —— VBS/内存完整性（HVCI）同样会占住 VT-x；`vbox_status` 会同时报出 `VBS configured` / `HVCI configured` / `hvservice` 状态 |
-| 想让 VirtualBox 用原生 VT-x | 关闭内存完整性并禁用 hypervisor 启动，然后**重启**（hypervisor 无法运行时卸载）：`reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f`、`reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f`、`bcdedit /set hypervisorlaunchtype off`。恢复：`bcdedit /set hypervisorlaunchtype auto` 并把两处改回 1 |
+| VM 明显慢、guest 时钟跑飞 | 先 `vbox_status` 看 `execution engine` 行：`NEM/WHP` 表示 CPU 虚拟化扩展被别的 hypervisor 占着。**关掉"启用或关闭 Windows 功能"里的 Hyper-V 并不够** —— VBS/内存完整性（HVCI）、Credential Guard、KeyGuard 都会让 hypervisor 继续运行；`vbox_status` 会同时报出 `VBS configured` / `HVCI configured` / `hvservice` 状态 |
+| 开着内存完整性还能用吗 | **能**。本机实测两种状态：内存完整性开启时 e2e 28/28、建机 40 秒；关闭后 30/30、41 秒，差别在噪声内。代价只有嵌套虚拟化（VM 里跑 VM）和可能略慢的 CPU 密集型负载。`paravirtprovider` 已默认 `none`，时钟两种模式下都正常 |
+| 想让 VirtualBox 用原生 AMD-V / VT-x | 需要同时拆掉整条链：关闭内存完整性、`KeyGuard`、并把 `vsmlaunchtype` 与 `hypervisorlaunchtype` 一起设为 off，然后**重启**（hypervisor 无法运行时卸载）。注意 **Windows 11 24H2/26H2 在支持 VBS 的硬件上可能坚持保留 hypervisor**，本机实测四个开关全关、两次重启后 `HypervisorPresent` 仍为 True —— 这时建议直接用 NEM（功能无损），而不是继续折腾 |
 | `cloud-init` 状态 `error` | `vbox_ssh` 读 `/var/log/cloud-init-output.log`；插件在 wait 失败时也会带回来最后 40 行。注意 cloud-init 的 `config` 阶段一旦失败，后面的 `runcmd` 不会执行 |
 | SSH 连上但命令报 `Permission denied` | 确认用的是插件生成的 key（`keys/id_ed25519`），`vbox_info` 里有端口和用户 |
 | `Permission denied (publickey)` + `UNPROTECTED PRIVATE KEY FILE` | Windows 上私钥继承了父目录 ACL（含 `Authenticated Users`），OpenSSH 会拒绝使用。插件在每次登录前都会用 `icacls /inheritance:r` 收紧到当前用户；手工拷来的 key 也建议自己跑一遍 |
