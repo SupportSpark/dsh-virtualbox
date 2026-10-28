@@ -266,6 +266,20 @@ async function offline() {
     return `${status.inventory.length} VMs, ${status.cpuCount} host CPUs`;
   });
 
+  await test('host virtualization state is detected', async () => {
+    const status = await api.manager.status();
+    const virt = status.virtualization;
+    assert.ok(virt, 'status must carry a virtualization facet');
+    assert.ok(['nem-whp', 'native-vtx', 'native', 'unknown'].includes(virt.engine), `engine=${virt.engine}`);
+    if (virt.engine !== 'unknown') {
+      assert.equal(typeof virt.hypervisorRunning, 'boolean');
+    }
+    console.log(
+      `      engine=${virt.engine} hvservice=${virt.hvservice ? virt.hvservice.state : 'absent'} vbs=${virt.vbsConfigured} hvci=${virt.hvciConfigured}`,
+    );
+    return virt.engine;
+  });
+
   await test('vbox_templates lists cache state', async () => {
     const rows = await api.manager.templates();
     assert.ok(rows.length > 5);

@@ -51,6 +51,7 @@
 | 现象 | 判断 |
 |---|---|
 | `SSH did not become ready` | 先 `vbox_console`；固件不匹配时试 `firmware: "efi"` |
-| cloud-init `error` | `/var/log/cloud-init-output.log`；wait 失败时已带最后 40 行 |
+| VM 慢 / guest 时钟跑飞 | `vbox_status` 的 `execution engine` 行：`NEM/WHP` 表示 VT-x 被 hypervisor 占着（VBS/HVCI 也算，不只是 Hyper-V）。要切原生 VT-x 需关内存完整性 + `bcdedit /set hypervisorlaunchtype off` + 重启 |
+| cloud-init `error` | `/var/log/cloud-init-output.log`；wait 失败时已带最后 40 行。config 阶段失败会导致 `runcmd` 完全不执行 |
 | 盘只有 3 GiB | `diskGB` 只在创建时生效，重建 VM |
 | `VERR_NEM_VM_CREATE_FAILED` | 宿主机开了 Hyper-V，需要启用「Windows 虚拟机监控程序平台」 |

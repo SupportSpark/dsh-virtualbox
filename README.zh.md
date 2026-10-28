@@ -177,7 +177,9 @@ vbox_apply { "dryRun": true }           // 先看会做什么
 | 现象 | 处理 |
 |---|---|
 | `vbox_wait` 超时 | `vbox_console` 看截图和 `vms/<name>/serial.log` 尾部；常见是镜像固件不匹配（试 `firmware: "efi"`）或 cloud-init 没读到 seed |
-| `cloud-init` 状态 `error` | `vbox_ssh` 读 `/var/log/cloud-init-output.log`；插件在 wait 失败时也会带回来最后 40 行 |
+| VM 明显慢、guest 时钟跑飞 | 先 `vbox_status` 看 `execution engine` 行：`NEM/WHP` 表示 VT-x 被别的 hypervisor 占着。**关掉"启用或关闭 Windows 功能"里的 Hyper-V 并不够** —— VBS/内存完整性（HVCI）同样会占住 VT-x；`vbox_status` 会同时报出 `VBS configured` / `HVCI configured` / `hvservice` 状态 |
+| 想让 VirtualBox 用原生 VT-x | 关闭内存完整性并禁用 hypervisor 启动，然后**重启**（hypervisor 无法运行时卸载）：`reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f`、`reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f`、`bcdedit /set hypervisorlaunchtype off`。恢复：`bcdedit /set hypervisorlaunchtype auto` 并把两处改回 1 |
+| `cloud-init` 状态 `error` | `vbox_ssh` 读 `/var/log/cloud-init-output.log`；插件在 wait 失败时也会带回来最后 40 行。注意 cloud-init 的 `config` 阶段一旦失败，后面的 `runcmd` 不会执行 |
 | SSH 连上但命令报 `Permission denied` | 确认用的是插件生成的 key（`keys/id_ed25519`），`vbox_info` 里有端口和用户 |
 | VirtualBox 报 `VERR_NEM_VM_CREATE_FAILED` / 起不来 | 宿主机开了 Hyper-V 时由 WHP 接管，需要启用「Windows 虚拟机监控程序平台」；本机已验证可启动 |
 | 磁盘只有 3 GiB | 忘了 `diskGB`；`modifymedium --resize` 只在创建时执行，已有 VM 请重建 |

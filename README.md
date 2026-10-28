@@ -107,7 +107,9 @@ Changing `template` / `cpus` / `memoryMB` / `diskGB` in that file is how you get
 | Symptom | Fix |
 |---|---|
 | `vbox_wait` times out | `vbox_console` for the screenshot and `vms/<name>/serial.log`; usually a firmware mismatch (try `firmware: "efi"`) or cloud-init never saw the seed |
-| cloud-init reports `error` | `vbox_ssh` → `/var/log/cloud-init-output.log`; the wait path returns the last 40 lines itself |
+| VM feels slow, guest clock runs away | `vbox_status` reports the `execution engine`: `NEM/WHP` means another hypervisor holds VT-x. **Unticking Hyper-V in Windows Features is not enough** — VBS / memory integrity (HVCI) also holds VT-x; the same line reports `VBS configured` / `HVCI configured` / `hvservice` |
+| Want native VT-x | Disable memory integrity, disable hypervisor launch, then **reboot** (a hypervisor cannot be unloaded at runtime): `reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f`, `reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f`, `bcdedit /set hypervisorlaunchtype off`. Revert with `auto` plus both values back to 1 |
+| cloud-init reports `error` | `vbox_ssh` → `/var/log/cloud-init-output.log`; the wait path returns the last 40 lines itself. Note that a failure in cloud-init's `config` stage skips `runcmd` entirely |
 | VM will not start at all | with Hyper-V enabled, VirtualBox runs on WHP and needs *Windows Hypervisor Platform* enabled |
 | Disk is only ~3 GiB | `diskGB` only applies at creation time; rebuild the VM |
 | Download stalls | try `mirror: "npmmirror-cloud"` or `ghproxy`, or pre-warm with `vbox_fetch_image` |
