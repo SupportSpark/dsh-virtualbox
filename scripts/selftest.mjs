@@ -288,7 +288,7 @@ async function offline() {
     const status = await api.manager.status();
     const virt = status.virtualization;
     assert.ok(virt, 'status must carry a virtualization facet');
-    assert.ok(['nem-whp', 'native-vtx', 'native', 'unknown'].includes(virt.engine), `engine=${virt.engine}`);
+    assert.ok(['nem-whp', 'native-vmx', 'native', 'unknown'].includes(virt.engine), `engine=${virt.engine}`);
     if (virt.engine !== 'unknown') {
       assert.equal(typeof virt.hypervisorRunning, 'boolean');
     }
