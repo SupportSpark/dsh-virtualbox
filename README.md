@@ -111,6 +111,8 @@ Changing `template` / `cpus` / `memoryMB` / `diskGB` in that file is how you get
 | Want native VT-x | Disable memory integrity, disable hypervisor launch, then **reboot** (a hypervisor cannot be unloaded at runtime): `reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f`, `reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f`, `bcdedit /set hypervisorlaunchtype off`. Revert with `auto` plus both values back to 1 |
 | cloud-init reports `error` | `vbox_ssh` → `/var/log/cloud-init-output.log`; the wait path returns the last 40 lines itself. Note that a failure in cloud-init's `config` stage skips `runcmd` entirely |
 | VM will not start at all | with Hyper-V enabled, VirtualBox runs on WHP and needs *Windows Hypervisor Platform* enabled |
+| `Permission denied (publickey)` with `UNPROTECTED PRIVATE KEY FILE` | On Windows the private key inherits its parent directory's ACL (including `Authenticated Users`), and OpenSSH refuses it. The plugin runs `icacls /inheritance:r` to the current user before every login; keys copied in by hand need the same |
+| `packages:` / `runcmd` is slow or seems not to run | The default apt origin (`deb.debian.org`) can be tens of kB/s on some routes, so `apt-get update` takes minutes and overruns the readiness window. The plugin points guest apt at a regional mirror by default (`aptMirror: "auto"`, measured 12.6 MB/s here); set `aptMirror: false` to keep the image's own sources |
 | Disk is only ~3 GiB | `diskGB` only applies at creation time; rebuild the VM |
 | Download stalls | try `mirror: "npmmirror-cloud"` or `ghproxy`, or pre-warm with `vbox_fetch_image` |
 

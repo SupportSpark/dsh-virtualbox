@@ -181,6 +181,8 @@ vbox_apply { "dryRun": true }           // 先看会做什么
 | 想让 VirtualBox 用原生 VT-x | 关闭内存完整性并禁用 hypervisor 启动，然后**重启**（hypervisor 无法运行时卸载）：`reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" /v Enabled /t REG_DWORD /d 0 /f`、`reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f`、`bcdedit /set hypervisorlaunchtype off`。恢复：`bcdedit /set hypervisorlaunchtype auto` 并把两处改回 1 |
 | `cloud-init` 状态 `error` | `vbox_ssh` 读 `/var/log/cloud-init-output.log`；插件在 wait 失败时也会带回来最后 40 行。注意 cloud-init 的 `config` 阶段一旦失败，后面的 `runcmd` 不会执行 |
 | SSH 连上但命令报 `Permission denied` | 确认用的是插件生成的 key（`keys/id_ed25519`），`vbox_info` 里有端口和用户 |
+| `Permission denied (publickey)` + `UNPROTECTED PRIVATE KEY FILE` | Windows 上私钥继承了父目录 ACL（含 `Authenticated Users`），OpenSSH 会拒绝使用。插件在每次登录前都会用 `icacls /inheritance:r` 收紧到当前用户；手工拷来的 key 也建议自己跑一遍 |
+| `packages:` / `runcmd` 很慢或没生效 | 默认 apt 源（`deb.debian.org`）在某些线路上只有几十 kB/s，`apt-get update` 会跑几分钟并撞穿等待上限。插件默认把 guest 的 apt 源换成区域镜像（`aptMirror: "auto"`，实测 12.6 MB/s）；要保留原源设 `aptMirror: false` |
 | VirtualBox 报 `VERR_NEM_VM_CREATE_FAILED` / 起不来 | 宿主机开了 Hyper-V 时由 WHP 接管，需要启用「Windows 虚拟机监控程序平台」；本机已验证可启动 |
 | 磁盘只有 3 GiB | 忘了 `diskGB`；`modifymedium --resize` 只在创建时执行，已有 VM 请重建 |
 | 下载卡住 | 换 `mirror: "npmmirror-cloud"` 或 `ghproxy`，或先 `vbox_fetch_image` 单独预热 |

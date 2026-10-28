@@ -19,7 +19,7 @@ import { buildIso9660, parseIso9660 } from '../lib/iso9660.js';
 import { buildUserData, buildMetaData, writeSeedIso } from '../lib/seed.js';
 import { detectImageFormat } from '../lib/image-cache.js';
 import { VBox, resolveVBoxManage } from '../lib/vbox.js';
-import { TEMPLATES, getTemplate, mirrorUrl } from '../lib/images.js';
+import { TEMPLATES, getTemplate, mirrorUrl, resolveAptMirror } from '../lib/images.js';
 import { parseBoxFile, defaultBoxFile } from '../lib/specfile.js';
 import * as plugin from '../lib/index.js';
 
@@ -138,6 +138,24 @@ async function offline() {
     assert.match(meta, /^instance-id: dsh-demo$/m);
     assert.match(meta, /^local-hostname: demo-vm$/m);
     return 'ok';
+  });
+
+  await test('apt mirror is injected ahead of package installation', () => {
+    const debianMirror = resolveAptMirror('auto', 'debian');
+    assert.ok(debianMirror?.uri, 'auto must resolve a mirror for debian');
+    const userData = buildUserData({
+      user: 'dev',
+      sshPublicKey: 'ssh-ed25519 AAAA t',
+      hostname: 'demo',
+      packages: ['curl'],
+      aptMirror: debianMirror,
+    });
+    assert.match(userData, /^apt:$/m);
+    assert.match(userData, /uri: 'http:\/\/mirror\.nju\.edu\.cn\/debian'/);
+    assert.match(userData, /security:/);
+    const none = buildUserData({ user: 'dev', hostname: 'demo', aptMirror: resolveAptMirror(false, 'debian') });
+    assert.doesNotMatch(none, /^apt:$/m, 'aptMirror=false must keep the image sources');
+    return debianMirror.uri;
   });
 
   await test('writeSeedIso writes a labelled image', async () => {
