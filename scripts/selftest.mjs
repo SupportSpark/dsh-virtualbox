@@ -292,10 +292,12 @@ async function offline() {
     if (virt.engine !== 'unknown') {
       assert.equal(typeof virt.hypervisorRunning, 'boolean');
     }
+    assert.equal(typeof status.nestedHwVirt, 'boolean', 'nested capability must be reported');
+    assert.equal(typeof status.hwVirt, 'boolean');
     console.log(
-      `      engine=${virt.engine} hvservice=${virt.hvservice ? virt.hvservice.state : 'absent'} vbs=${virt.vbsConfigured} hvci=${virt.hvciConfigured}`,
+      `      engine=${virt.engine} hvservice=${virt.hvservice ? virt.hvservice.state : 'absent'} vbs=${virt.vbsConfigured} hvci=${virt.hvciConfigured} nested=${status.nestedHwVirt}`,
     );
-    return virt.engine;
+    return `${virt.engine}, nested=${status.nestedHwVirt}`;
   });
 
   await test('vbox_templates lists cache state', async () => {

@@ -117,6 +117,32 @@ Changing `template` / `cpus` / `memoryMB` / `diskGB` in that file is how you get
 | Disk is only ~3 GiB | `diskGB` only applies at creation time; rebuild the VM |
 | Download stalls | try `mirror: "npmmirror-cloud"` or `ghproxy`, or pre-warm with `vbox_fetch_image` |
 
+## Nested virtualization (a VM inside a VM)
+
+**Currently unavailable.** Measured on this host with memory integrity on:
+
+| Check | Result |
+|---|---|
+| `VBoxManage list hostinfo` | `Processor supports nested HW virtualization: no` |
+| guest `/proc/cpuinfo` | **no `svm` / `vmx` flag** |
+| guest `/dev/kvm` | absent |
+| guest `modprobe kvm_amd` | `Operation not supported` |
+
+The Windows hypervisor strips AMD-V/SVM out of CPUID, so VirtualBox never gets the extensions and cannot pass them on.
+
+VirtualBox has the knob — `--nested-hw-virt on`, exposed here as `vbox_create { "nestedHwVirt": true }` — but it only means anything once VirtualBox actually owns the extensions, i.e. after the hypervisor lets go (see the "Want native AMD-V / VT-x" row; Windows 11 26H2 may refuse).
+
+### On Microsoft's "run Hyper-V in a VM" doc
+
+`Set-VMProcessor -VMName X -ExposeVirtualizationExtensions $true` is a **Hyper-V** cmdlet operating on Hyper-V VMs, and needs the Hyper-V role installed (Windows Server 2016+/Win10+; AMD hosts require Win11+, and VM configuration version ≥ 8.0 on Intel / ≥ 9.3 on AMD).
+
+It does not transfer to VirtualBox: here `Microsoft-Hyper-V-All` is Disabled and the Hyper-V PowerShell module is absent (`Get-VMProcessor` does not exist), so the command cannot even run; and what it does is expose the extensions to a *Hyper-V* guest, which is a different path from VirtualBox's NEM.
+
+Two ways to actually get nesting:
+
+1. **Switch backends** — install the Hyper-V role, build the VM with Hyper-V, then apply that doc's `ExposeVirtualizationExtensions` (this keeps memory integrity on).
+2. **Stay on VirtualBox** — the hypervisor must release AMD-V (disable the whole VBS chain and reboot), then `nestedHwVirt: true`.
+
 ## Known limits
 
 - No Guest Additions: no shared folders, drag-and-drop or clipboard. Move files with `vbox_ssh` / `scp`.

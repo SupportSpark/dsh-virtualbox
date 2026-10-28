@@ -190,6 +190,35 @@ vbox_apply { "dryRun": true }           // 先看会做什么
 
 ---
 
+## 嵌套虚拟化（VM 里跑 VM）
+
+**当前状态：不可用。** 本机实测（内存完整性开启、hypervisor 在跑）：
+
+| 检查 | 结果 |
+|---|---|
+| `VBoxManage list hostinfo` | `Processor supports nested HW virtualization: no` |
+| guest 内 `/proc/cpuinfo` | **没有 `svm` / `vmx` 标志** |
+| guest 内 `/dev/kvm` | 不存在 |
+| guest 内 `modprobe kvm_amd` | `Operation not supported` |
+
+原因：Windows 的 hypervisor 把 AMD-V/SVM 从 CPUID 里抹掉了，VirtualBox 自己都拿不到，更没法透给 guest。
+
+VirtualBox 侧有开关 `--nested-hw-virt on`，插件对应参数是 `vbox_create { "nestedHwVirt": true }`。但它**只在 VirtualBox 真正持有 CPU 虚拟化扩展时才有意义** —— 也就是 hypervisor 必须让开（见上文"想让 VirtualBox 用原生 AMD-V"那一行，且 Windows 11 26H2 可能拒绝）。
+
+### 关于微软那篇「在虚拟机中运行 Hyper-V」的文档
+
+`Set-VMProcessor -VMName X -ExposeVirtualizationExtensions $true` 是 **Hyper-V 专属**命令，作用于 Hyper-V 主机上的 Hyper-V 虚拟机，前提是：
+
+- 主机装好 Hyper-V 角色（Windows Server 2016+ / Win10+；AMD 平台要求 Win11+）
+- 虚拟机配置版本 ≥ 8.0（Intel）/ ≥ 9.3（AMD）
+
+**不能套用到 VirtualBox**：本机 `Microsoft-Hyper-V-All` 是 Disabled，Hyper-V PowerShell 模块根本不存在（`Get-VMProcessor` 找不到），这条命令在这里无从执行；而且它做的是"把扩展透给 Hyper-V 的 guest"，与 VirtualBox 的 NEM 路径无关。
+
+如果你确实需要嵌套，两条路：
+
+1. **换后端**：装 Hyper-V 角色，用 Hyper-V 建 VM，再按那篇文档开 `ExposeVirtualizationExtensions`（这条路能同时保留内存完整性）
+2. **留 VirtualBox**：必须让 hypervisor 让出 AMD-V，即彻底关闭 VBS 整条链并重启，然后再 `nestedHwVirt: true`
+
 ## 已知边界
 
 - **没有 Guest Additions**：共享文件夹、拖拽、剪贴板都不可用；文件进出请走 `vbox_ssh` / `scp`。
