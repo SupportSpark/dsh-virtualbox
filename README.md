@@ -79,6 +79,17 @@ Configuration is optional; every field has a default (see `DEFAULTS` in `lib/ind
 | `vbox_apply` | converge a boxes file: create missing, boot stopped, wait for SSH |
 | `vbox_console` | console PNG + serial-log tail (for boxes that will not boot) |
 | `vbox_keys` | type into the console (drives text installers) |
+| `vbox_network` | port forwards, host-only adapters, NAT networks (`action` = `list_nat_rules` / `add_nat_rule` / `list_hostonlyifs` / …) |
+| `vbox_storage` | disks: list media, inspect one, create, attach, detach, resize, clone, compact |
+| `vbox_export` | export a VM to OVA/OVF, or import one |
+| `vbox_metrics` | host and per-VM CPU/RAM counters (`list` / `sample` / `query` / `host`) |
+| `vbox_help` | inventory of every `vbox_*` tool plus worked recipes |
+
+The last five are *portmanteau* tools: one tool per domain with an `action`
+discriminator. An agent that already knows VirtualBox needs the operations, not
+a few dozen more names in the tool list, so related verbs share one schema. The
+lifecycle tools stay discrete because they are reached for by intent
+("boot this box"), not by category.
 
 ## Template workflow
 

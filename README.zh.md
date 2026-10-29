@@ -89,6 +89,16 @@ dsh plugin add github:SupportSpark/dsh-virtualbox
 | `vbox_apply` | 按 boxes 配置文件幂等收敛整套环境 |
 | `vbox_console` | 截控制台 PNG + 串口日志尾部（机器起不来时看这个） |
 | `vbox_keys` | 往控制台敲字符（驱动文本安装器） |
+| `vbox_network` | 端口转发、host-only 网卡、NAT 网络（`action` = `list_nat_rules` / `add_nat_rule` / `list_hostonlyifs` …） |
+| `vbox_storage` | 磁盘：列全部介质、看单个详情、创建、挂载、卸载、扩容、克隆、压缩 |
+| `vbox_export` | 导出成 OVA/OVF，或导入一个 |
+| `vbox_metrics` | 宿主机与单机的 CPU/内存计数器（`list` / `sample` / `query` / `host`） |
+| `vbox_help` | 全部 `vbox_*` 工具清单 + 常用配方 |
+
+后五个是 **portmanteau 工具**：一个域一个工具，用 `action` 区分具体操作。已经懂
+VirtualBox 的模型需要的是"能做哪些操作"，而不是在工具列表里再多几十个名字，所以
+同类动作用同一个 schema。生命周期类工具保持独立 —— 那些是按意图取的（"把机器启起来"），
+不是按分类找的。
 
 ---
 

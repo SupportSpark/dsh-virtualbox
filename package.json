@@ -1,6 +1,6 @@
 {
   "name": "dsh-virtualbox",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DSH plugin: create, boot and drive Linux VMs on the local VirtualBox host from cloud-image templates, with cloud-init seeding, SSH forwarding, snapshots and console access.",
   "type": "module",
   "main": "./lib/index.js",
