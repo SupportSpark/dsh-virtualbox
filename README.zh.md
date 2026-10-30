@@ -229,6 +229,24 @@ VirtualBox 侧有开关 `--nested-hw-virt on`，插件对应参数是 `vbox_crea
 1. **换后端**：装 Hyper-V 角色，用 Hyper-V 建 VM，再按那篇文档开 `ExposeVirtualizationExtensions`（这条路能同时保留内存完整性）
 2. **留 VirtualBox**：必须让 hypervisor 让出 AMD-V，即彻底关闭 VBS 整条链并重启，然后再 `nestedHwVirt: true`
 
+## 磁盘空间
+
+数据盘现在以 `--discard on --nonrotational on` 挂载：guest 的 TRIM 能传到 VDI，
+被删除的块会真正还给宿主机，而不是一直占着。少了这一对参数，20 GiB 的盘即使
+guest 里只有几个 G 数据，也会一路涨到接近标称容量，而 `modifymedium --compact`
+没有任何空洞可回收。
+
+0.2.1 之前创建的 VM 仍是 `discard` 关闭状态。关机后原地修正：
+
+```bash
+VBoxManage storageattach <vm> --storagectl SATA --port 0 --device 0 \
+  --type hdd --medium "<当前磁盘文件>" --discard on --nonrotational on
+```
+
+然后在 guest 里开启一次定时器：`systemctl enable --now fstrim.timer`。
+已经涨上去的部分用 `vbox_storage action=compact_disk` 回收，但**仍带快照的盘
+必须先合并快照** —— 而合并会删掉那个快照，`vbox_reset` 就失去这个还原点。
+
 ## 已知边界
 
 - **没有 Guest Additions**：共享文件夹、拖拽、剪贴板都不可用；文件进出请走 `vbox_ssh` / `scp`。

@@ -154,6 +154,27 @@ Two ways to actually get nesting:
 1. **Switch backends** — install the Hyper-V role, build the VM with Hyper-V, then apply that doc's `ExposeVirtualizationExtensions` (this keeps memory integrity on).
 2. **Stay on VirtualBox** — the hypervisor must release AMD-V (disable the whole VBS chain and reboot), then `nestedHwVirt: true`.
 
+## Disk space
+
+Data disks are attached with `--discard on --nonrotational on`, so the guest's
+TRIM commands reach the VDI: blocks the guest has freed are given back instead of
+staying allocated. Without that pair a 20 GiB disk climbs towards its nominal size
+even when the guest only holds a few GiB, and `modifymedium --compact` has nothing
+to reclaim.
+
+VMs created before 0.2.1 still have `discard` off. Fix one in place while it is
+powered off:
+
+```bash
+VBoxManage storageattach <vm> --storagectl SATA --port 0 --device 0 \
+  --type hdd --medium "<current disk file>" --discard on --nonrotational on
+```
+
+then switch the guest timer on once: `systemctl enable --now fstrim.timer`.
+`vbox_storage action=compact_disk` reclaims what has already accumulated, but a
+disk that still has snapshots must be merged first — and merging deletes the
+snapshot, so `vbox_reset` loses that reset point.
+
 ## Known limits
 
 - No Guest Additions: no shared folders, drag-and-drop or clipboard. Move files with `vbox_ssh` / `scp`.
